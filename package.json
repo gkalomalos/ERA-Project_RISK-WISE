@@ -14,7 +14,7 @@
     "start:electron": "npm run build && electron .",
     "quickstart": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false WIN_DISABLE_SIGNING=true electron-builder -w",
+    "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false WIN_DISABLE_SIGNING=true electron-builder -w",
     "publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false WIN_DISABLE_SIGNING=true electron-builder -w --publish always"
   },
   "dependencies": {

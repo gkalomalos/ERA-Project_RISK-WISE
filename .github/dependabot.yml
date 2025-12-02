@@ -1,15 +1,23 @@
 version: 2
 updates:
-  # 1. NPM (package.json)
+  # 1. NPM dependencies (package.json)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    groups:
+      everything:
+        patterns:
+          - "*"   # group ALL npm updates into a single PR
 
-  # 2. GitHub Actions (.github/workflows/*)
+  # 2. GitHub Actions (workflows)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    groups:
+      workflow-updates:
+        patterns:
+          - "*"   # group all action updates into one PR

@@ -1,9 +1,9 @@
 {
   "name": "riskwise",
   "productName": "RISK WISE",
-  "description": "Desktop GUI application for fully probabilistic climate risk assessment tool Climada. Provides a framework for users to combine exposure, hazard and vulnerability or impact data to calculate risk.",
+  "description": "Desktop GUI application for fully probabilistic climate risk assessment tool CLIMADA. Provides a framework for users to combine exposure, hazard and vulnerability or impact data to calculate risk.",
   "author": "Sword Group <georgios.kalomalos@sword-group.com>",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "main": "build/electron.js",
   "homepage": ".",
@@ -14,8 +14,8 @@
     "start:electron": "npm run build && electron .",
     "quickstart": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w",
-    "publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --publish always"
+    "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false WIN_DISABLE_SIGNING=true electron-builder -w",
+    "publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false WIN_DISABLE_SIGNING=true electron-builder -w --publish always"
   },
   "dependencies": {
     "@emotion/react": "11.11.4",
@@ -91,9 +91,16 @@
     "generateUpdatesFilesForAllChannels": true,
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
-      "icon": "build/favicon.ico"
+      "icon": "build/favicon.ico",
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,

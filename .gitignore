@@ -19,6 +19,8 @@ logs/
 
 # environment
 climada_env
+climada_env_min
+climada_env_test
 
 # python
 *.pyc
@@ -37,3 +39,4 @@ test.ipynb
 changelog_generator.py
 translation_validation.log
 scripts
+notes.txt

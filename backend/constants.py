@@ -1,7 +1,7 @@
 """
 Module to handle directory paths and configurations.
 
-This module provides variables/constants to store directory paths for data, logs, backend, 
+This module provides variables/constants to store directory paths for data, logs, backend,
 and requirements. It also includes a function to determine the base directory depending on whether
 the script is running in a bundled environment or a normal Python environment.
 
@@ -19,12 +19,13 @@ Constants:
 
 Functions:
 
-- get_base_dir(): 
+- get_base_dir():
     Function to determine the base directory path depending on the environment.
 """
 
 from pathlib import Path
 import sys
+import os
 
 
 def get_base_dir() -> Path:
@@ -57,7 +58,7 @@ DATA_HAZARDS_DIR = DATA_DIR / "hazards"
 DATA_TEMP_DIR = DATA_DIR / "temp"
 
 # LOGS
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = Path(os.getenv("LOG_DIR", BASE_DIR / "logs"))
 
 # BACKEND
 BACKEND_DIR = BASE_DIR / "backend"

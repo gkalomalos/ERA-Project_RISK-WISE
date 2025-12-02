@@ -83,7 +83,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "GIZ-RiskFinance",
+        "owner": "gkalomalos",
         "repo": "ERA-Project_RISK-WISE",
         "releaseType": "release"
       }

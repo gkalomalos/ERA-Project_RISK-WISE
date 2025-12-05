@@ -1,6 +1,5 @@
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
-!include "nsExec.nsh"
 
 !macro _DownloadAndInstallEngine
   ; Define paths

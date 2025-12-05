@@ -117,7 +117,7 @@ app.whenReady().then(async () => {
       log.info("[electron] checking for updates...");
       autoUpdater.setFeedURL({
         provider: "github",
-        owner: "GIZ-RiskFinance",
+        owner: "gkalomalos",
         repo: "ERA-Project_RISK-WISE",
         releaseType: "release",
       });
@@ -310,27 +310,14 @@ const runPythonScript = (mainWindow, scriptName, data) => {
 const createPythonProcess = () => {
   const scriptPath = path.join(basePath, "backend", "app.py");
 
-  // 1) Try local engine first (previous behavior)
-  const localEnginePath = path.join(basePath, "climada_env");
-  const localPython = path.join(localEnginePath, "python.exe");
+  // Engine is installed under APPDATA by the NSIS installer:
+  // %APPDATA%\RiskWiseEngine\climada_env\python.exe
+  const engineRoot = app.getPath("appData");
+  const enginePath = path.join(engineRoot, "RiskWiseEngine", "climada_env");
+  const pythonExecutable = path.join(enginePath, "python.exe");
 
-  // 2) Fallback: AppData engine path
-  const appDataEnginePath = path.join(app.getPath("appData"), "RiskWiseEngine", "climada_env");
-  const appDataPython = path.join(appDataEnginePath, "python.exe");
-
-  // 3) Resolve final pythonExecutable
-  let pythonExecutable = null;
-
-  if (fs.existsSync(localPython)) {
-    pythonExecutable = localPython;
-    log.info("[electron] Using LOCAL Python:", pythonExecutable);
-  } else if (fs.existsSync(appDataPython)) {
-    pythonExecutable = appDataPython;
-    log.info("[electron] Using APPDATA Python:", pythonExecutable);
-  } else {
-    throw new Error(
-      "Python executable not found in either location:\n" + localPython + "\n" + appDataPython
-    );
+  if (!fs.existsSync(pythonExecutable)) {
+    throw new Error("Python executable not found at: " + pythonExecutable);
   }
 
   if (!fs.existsSync(scriptPath)) {

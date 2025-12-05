@@ -3,7 +3,7 @@
   "productName": "RISK WISE",
   "description": "Desktop GUI application for fully probabilistic climate risk assessment tool CLIMADA. Provides a framework for users to combine exposure, hazard and vulnerability or impact data to calculate risk.",
   "author": "Sword Group <georgios.kalomalos@sword-group.com>",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "main": "build/electron.js",
   "homepage": ".",
@@ -71,8 +71,7 @@
       "backend/**/*",
       "requirements/",
       "data/entities/",
-      "data/hazards/",
-      "climada_env/"
+      "data/hazards/"
     ],
     "icon": "build/favicon.ico",
     "directories": {
@@ -110,7 +109,8 @@
       "allowElevation": true,
       "license": "EULA.txt",
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "include": "build/installer.nsh"
     }
   }
 }

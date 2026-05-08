@@ -61,7 +61,7 @@ const updateLoaderMessage = (message) => {
   }
 };
 
-const downloadAndInstallEngine = async (loaderWindow) => {
+const downloadAndInstallEngine = async (_loaderWindow) => {
   const engineRoot = process.env.LOCALAPPDATA;
   if (!engineRoot) {
     throw new Error("Failed to resolve LOCALAPPDATA environment variable");
@@ -490,27 +490,32 @@ const runPythonScript = (mainWindow, scriptName, data) => {
         const rawData = buffer.substring(0, boundary);
         buffer = buffer.substring(boundary + 1);
 
-        if (rawData.trim().startsWith("{") || rawData.trim().startsWith("[")) {
-          try {
-            const response = JSON.parse(rawData);
-            if (response.type === "progress") {
-              // Only send progress if mainWindow exists and isn't destroyed
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send("progress", response);
-              }
-            } else {
-              global.pythonProcess.stdout.off("data", handleData);
-              if (response.success) {
-                resolve(response.result);
-              } else {
-                reject(new Error(response.error));
-              }
-            }
-          } catch (error) {
-            global.pythonProcess.stdout.off("data", handleData);
-            log.error("Error parsing Python stdout:", error.message);
-            reject(error);
+        if (rawData.trim() === "") {
+          boundary = buffer.indexOf("\n");
+          continue;
+        }
+
+        let response;
+        try {
+          response = JSON.parse(rawData);
+        } catch {
+          log.warn(`[python:stdout] ${rawData}`);
+          boundary = buffer.indexOf("\n");
+          continue;
+        }
+
+        if (response.type === "progress") {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("progress", response);
           }
+        } else {
+          global.pythonProcess.stdout.off("data", handleData);
+          if (response.success) {
+            resolve(response.result);
+          } else {
+            reject(new Error(response.error));
+          }
+          return;
         }
 
         boundary = buffer.indexOf("\n");
@@ -623,7 +628,7 @@ ipcMain.handle("clear-temp-dir", async () => {
 });
 
 // Handle save screenshot request
-ipcMain.handle("save-screenshot", async (event, { blob, filePath }) => {
+ipcMain.handle("save-screenshot", async (_event, { blob, filePath }) => {
   try {
     const buffer = Buffer.from(blob, "base64");
     const dir = path.dirname(filePath);
@@ -631,16 +636,16 @@ ipcMain.handle("save-screenshot", async (event, { blob, filePath }) => {
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, buffer);
 
-    event.sender.send("save-screenshot-reply", { success: true, filePath });
     log.info("[electron] screenshot saved:", filePath);
+    return { success: true, filePath };
   } catch (error) {
     log.error("[electron] failed to save screenshot:", error);
-    event.sender.send("save-screenshot-reply", { success: false, error: error.message });
+    return { success: false, error: error.message };
   }
 });
 
 // Handle folder copy request
-ipcMain.handle("copy-folder", async (event, { sourceFolder, destinationFolder }) => {
+ipcMain.handle("copy-folder", async (_event, { sourceFolder, destinationFolder }) => {
   try {
     fs.mkdirSync(destinationFolder, { recursive: true });
     const files = fs.readdirSync(sourceFolder);
@@ -651,26 +656,26 @@ ipcMain.handle("copy-folder", async (event, { sourceFolder, destinationFolder })
       fs.copyFileSync(sourcePath, destinationPath);
     }
 
-    event.sender.send("copy-folder-reply", { success: true, destinationFolder });
     log.info("[electron] folder copied:", sourceFolder, "->", destinationFolder);
+    return { success: true, destinationFolder };
   } catch (error) {
     log.error("[electron] failed to copy folder:", error);
-    event.sender.send("copy-folder-reply", { success: false, error: error.message });
+    return { success: false, error: error.message };
   }
 });
 
 // Handle copy file from temp folder request
-ipcMain.handle("copy-file", async (event, { sourcePath, destinationPath }) => {
+ipcMain.handle("copy-file", async (_event, { sourcePath, destinationPath }) => {
   try {
     const dir = path.dirname(destinationPath);
     fs.mkdirSync(dir, { recursive: true });
     fs.copyFileSync(sourcePath, destinationPath);
 
-    event.sender.send("copy-file-reply", { success: true, destinationPath });
     log.info("[electron] file copied:", sourcePath, "->", destinationPath);
+    return { success: true, destinationPath };
   } catch (error) {
     log.error("[electron] failed to copy file:", error);
-    event.sender.send("copy-file-reply", { success: false, error: error.message });
+    return { success: false, error: error.message };
   }
 });
 

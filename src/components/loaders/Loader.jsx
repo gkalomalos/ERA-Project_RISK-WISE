@@ -40,17 +40,14 @@ const Loader = () => {
   const { progress, setProgress } = useStore();
 
   useEffect(() => {
-    const handleProgress = (event, json) => {
-      setProgress(json.progress);
-    };
-    try {
-      electron.on("progress", handleProgress);
-      return () => {
-        electron.remove("progress", handleProgress);
-      };
-    } catch (e) {
+    if (!electron?.subscribeProgress) {
       console.log("Not running in electron");
+      return;
     }
+    const unsubscribe = electron.subscribeProgress((json) => {
+      setProgress(json.progress);
+    });
+    return unsubscribe;
   }, []);
 
   return (

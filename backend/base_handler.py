@@ -227,7 +227,7 @@ class BaseHandler:
         if scenario == "rcp26":
             _scenario = "RCP 2.6"
         if scenario == "rcp45":
-            _scenario = "RCP 4.5"
+            _scenario = "RCP 4.5d"
         if scenario == "rcp60":
             _scenario = "RCP 6.0"
         if scenario == "rcp85":

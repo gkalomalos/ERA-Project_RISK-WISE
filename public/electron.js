@@ -696,7 +696,7 @@ ipcMain.on("shutdown", () => {
 });
 
 ipcMain.on("reload", async () => {
-  log.info("[electron] reload CLIMADA App...");
+  log.info("[electron] reloading RISK WISE renderer...");
 
   if (global.pythonProcess && !global.pythonProcess.killed) {
     try {

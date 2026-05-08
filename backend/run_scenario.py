@@ -130,8 +130,6 @@ class RunScenario:
         self.request_data = self._extract_request_data(request)
         # Set default successful status code and message
         self.status = Status()
-        # Clear previously generated maps and geojson datasets from temp directory
-        self._clear()
 
     def _initialize_handlers(self):
         """Initialize handlers."""
@@ -236,6 +234,7 @@ class RunScenario:
         :return: The average annual growth rate.
         :rtype: float
         """
+        default_growth_rate = 0
         try:
             growth_rates = {
                 "Egypt": {
@@ -261,7 +260,6 @@ class RunScenario:
                 },
             }
             if self.request_data.is_era:
-                default_growth_rate = 0
                 country_growth_rates = growth_rates.get(self.request_data.country_name, {})
                 growth = country_growth_rates.get(
                     self.request_data.exposure_type, default_growth_rate
@@ -544,7 +542,6 @@ class RunScenario:
             self.base_handler.update_progress(
                 20, "Setting up Exposure objects from custom datasets..."
             )
-            exposure_present = entity_present.exposures
             exposure_future = None
             if self.request_data.scenario != "historical":
                 exposure_future = entity_future.exposures

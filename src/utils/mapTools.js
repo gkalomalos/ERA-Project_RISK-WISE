@@ -37,9 +37,24 @@ export const useMapTools = () => {
         .takeScreen("blob")
         .then((blob) => {
           const reader = new FileReader();
-          reader.onloadend = () => {
+          reader.onloadend = async () => {
             const base64data = reader.result.split(",")[1];
-            window.electron.saveScreenshot(base64data, filePath);
+            try {
+              const reply = await window.electron.saveScreenshot(base64data, filePath);
+              if (reply.success) {
+                setAlertMessage(`${t("alert_message_successful_screenshot")}::${reply.filePath}`);
+                setAlertSeverity("success");
+                setAlertShowMessage(true);
+                resolve(reply.filePath);
+              } else {
+                setAlertMessage(`${t("alert_message_error_screenshot")}: ${reply.error}`);
+                setAlertSeverity("error");
+                setAlertShowMessage(true);
+                reject(new Error(reply.error));
+              }
+            } catch (err) {
+              reject(err);
+            }
           };
           reader.readAsDataURL(blob);
         })
@@ -47,21 +62,6 @@ export const useMapTools = () => {
           console.error(e);
           reject(e); // Reject the promise if an error occurs
         });
-
-      // Listen for the save screenshot response
-      window.electron.onSaveScreenshotReply((event, { success, error, filePath }) => {
-        if (success) {
-          setAlertMessage(`${t("alert_message_successful_screenshot")}::${filePath}`);
-          setAlertSeverity("success");
-          setAlertShowMessage(true);
-          resolve(filePath); // Resolve the promise with the file path on success
-        } else {
-          setAlertMessage(`${t("alert_message_error_screenshot")}: ${error}`);
-          setAlertSeverity("error");
-          setAlertShowMessage(true);
-          reject(new Error(error)); // Reject the promise on error
-        }
-      });
     });
   };
 
@@ -174,46 +174,27 @@ export const useMapTools = () => {
     }
   };
 
-  const copyFolderToTemp = (sourceFolder) => {
-    return new Promise((resolve, reject) => {
-      // Get the temp folder path first
-      window.electron.fetchTempDir().then((tempFolder) => {
-        const destinationFolder = `${tempFolder}`;
-
-        // Invoke folder copy
-        window.electron.copyFolder(sourceFolder, destinationFolder);
-
-        // Listen for the response
-        window.electron.onCopyFolderReply((event, { success, error, destinationFolder }) => {
-          if (success) {
-            resolve(destinationFolder); // Resolve the promise on success
-          } else {
-            reject(new Error(error)); // Reject the promise on error
-          }
-        });
-      });
-    });
+  const copyFolderToTemp = async (sourceFolder) => {
+    const tempFolder = await window.electron.fetchTempDir();
+    const reply = await window.electron.copyFolder(sourceFolder, tempFolder);
+    if (reply.success) {
+      return reply.destinationFolder;
+    }
+    throw new Error(reply.error);
   };
 
-  const copyFileToReports = (sourcePath, destinationPath) => {
-    return new Promise((resolve, reject) => {
-      window.electron.copyFile(sourcePath, destinationPath);
-
-      // Listen for the copy file response
-      window.electron.onCopyFileReply((event, { success, error, destinationPath }) => {
-        if (success) {
-          setAlertMessage(t("alert_message_successful_copy_file"));
-          setAlertSeverity("success");
-          setAlertShowMessage(true);
-          resolve(destinationPath); // Resolve the promise with the destination path on success
-        } else {
-          setAlertMessage(`${t("alert_message_error_copy_file")}: ${error}`);
-          setAlertSeverity("error");
-          setAlertShowMessage(true);
-          reject(new Error(error)); // Reject the promise on error
-        }
-      });
-    });
+  const copyFileToReports = async (sourcePath, destinationPath) => {
+    const reply = await window.electron.copyFile(sourcePath, destinationPath);
+    if (reply.success) {
+      setAlertMessage(t("alert_message_successful_copy_file"));
+      setAlertSeverity("success");
+      setAlertShowMessage(true);
+      return reply.destinationPath;
+    }
+    setAlertMessage(`${t("alert_message_error_copy_file")}: ${reply.error}`);
+    setAlertSeverity("error");
+    setAlertShowMessage(true);
+    throw new Error(reply.error);
   };
 
   const reportExists = (reportId) => {

@@ -15,7 +15,9 @@
     "quickstart": "electron .",
     "pack": "electron-builder --dir",
     "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w",
-    "publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --publish always"
+    "publish": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w --publish always",
+    "verify-dist": "node installer/verify-dist.js",
+    "smoke-test": "npm run dist && npm run verify-dist"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -51,7 +53,7 @@
     "@vitejs/plugin-react": "4.3.2",
     "cross-env": "^10.0.0",
     "electron": "37.3.1",
-    "electron-builder": "26.0.12",
+    "electron-builder": "26.7.0",
     "eslint": "9.39.2",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "5.2.0",

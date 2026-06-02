@@ -1,9 +1,57 @@
+; ---------------------------------------------------------------------------
+; Engine artifact (Python + CLIMADA). KEEP IN SYNC with public/electron.js
+; (search ENGINE_RELEASE_TAG). The .sha256 sidecar contains a single line of
+; lowercase hex (64 chars) that must match the downloaded zip.
+; ---------------------------------------------------------------------------
+!define ENGINE_RELEASE_TAG "engine-v1"
+!define ENGINE_DOWNLOAD_URL "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/${ENGINE_RELEASE_TAG}/RiskWiseEngine.zip"
+!define ENGINE_SHA256_URL "${ENGINE_DOWNLOAD_URL}.sha256"
+
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 
 ; Force immediate detail pane updates
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
+
+; Strips whitespace/CR/LF and lowercases a hex hash string.
+Function NormalizeHash
+  Exch $R0
+  Push $R1
+  Push $R2
+  StrCpy $R1 ""
+  StrLen $R2 $R0
+  IntOp $R2 $R2 - 1
+  ${ForEach} $R3 0 $R2 + 1
+    StrCpy $R4 $R0 1 $R3
+    ${If} $R4 == " "
+    ${OrIf} $R4 == "$\r"
+    ${OrIf} $R4 == "$\n"
+    ${OrIf} $R4 == "$\t"
+      ; skip
+    ${Else}
+      ; lowercase A-F -> a-f
+      ${If} $R4 == "A"
+        StrCpy $R4 "a"
+      ${ElseIf} $R4 == "B"
+        StrCpy $R4 "b"
+      ${ElseIf} $R4 == "C"
+        StrCpy $R4 "c"
+      ${ElseIf} $R4 == "D"
+        StrCpy $R4 "d"
+      ${ElseIf} $R4 == "E"
+        StrCpy $R4 "e"
+      ${ElseIf} $R4 == "F"
+        StrCpy $R4 "f"
+      ${EndIf}
+      StrCpy $R1 "$R1$R4"
+    ${EndIf}
+  ${Next}
+  StrCpy $R0 $R1
+  Pop $R2
+  Pop $R1
+  Exch $R0
+FunctionEnd
 
 !macro customInit
   SetDetailsPrint both
@@ -58,7 +106,7 @@
     DetailPrint "  Archive size: ~500 MB"
     Sleep 800
     
-    StrCpy $3 "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/v1.0.6/RiskWiseEngine.zip"
+    StrCpy $3 "${ENGINE_DOWNLOAD_URL}"
     
     nsExec::ExecToLog 'curl -L "$3" --output "$2"'
     Pop $4
@@ -76,6 +124,60 @@
     DetailPrint "✓ Download complete"
     Sleep 500
   ${EndIf}
+
+  DetailPrint ""
+  DetailPrint "Verifying engine archive integrity..."
+  Sleep 500
+
+  ; Fetch expected hash sidecar -> %TEMP%\RiskWiseEngine.zip.sha256
+  StrCpy $6 "$TEMP\RiskWiseEngine.zip.sha256"
+  Delete "$6"
+  nsExec::ExecToLog 'curl -L -f -s "${ENGINE_SHA256_URL}" --output "$6"'
+  Pop $4
+  ${If} $4 != 0
+    DetailPrint "✗ Failed to download SHA-256 sidecar (exit code: $4)"
+    MessageBox MB_ICONSTOP|MB_TOPMOST \
+      "Failed to download engine integrity sidecar (${ENGINE_SHA256_URL}).$\r$\nExit code: $4$\r$\nCheck internet connection and retry."
+    Goto done_engine
+  ${EndIf}
+
+  ; Compute actual hash with certutil (built into Windows since Win7)
+  nsExec::ExecToStack 'cmd /c "certutil -hashfile $\"$2$\" SHA256 | findstr /v $\":$\" | findstr /v hash"'
+  Pop $4
+  Pop $5
+  ${If} $4 != 0
+    DetailPrint "✗ certutil failed (exit code: $4)"
+    MessageBox MB_ICONSTOP|MB_TOPMOST "Failed to compute archive checksum. certutil exit: $4"
+    Goto done_engine
+  ${EndIf}
+
+  ; $5 = computed hash (uppercase, may contain whitespace). Read expected from sidecar into $7.
+  FileOpen $8 "$6" r
+  FileRead $8 $7
+  FileClose $8
+
+  ; Normalize: strip CR/LF/spaces, lowercase both.
+  Push $5
+  Call NormalizeHash
+  Pop $5
+  Push $7
+  Call NormalizeHash
+  Pop $7
+
+  ${If} $5 != $7
+    DetailPrint "✗ Engine archive SHA-256 mismatch"
+    DetailPrint "  expected: $7"
+    DetailPrint "  actual:   $5"
+    Delete "$2"
+    Delete "$6"
+    MessageBox MB_ICONSTOP|MB_TOPMOST \
+      "Engine archive failed integrity check (SHA-256 mismatch).$\r$\n$\r$\nThe download may be corrupted or tampered.$\r$\nPlease run the installer again."
+    Goto done_engine
+  ${EndIf}
+
+  DetailPrint "✓ Engine archive integrity verified"
+  Delete "$6"
+  Sleep 500
 
   ; Verify archive exists
   ${IfNot} ${FileExists} "$2"

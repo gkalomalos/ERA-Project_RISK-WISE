@@ -5,6 +5,19 @@ const path = require("path");
 const fs = require("fs");
 const log = require("electron-log");
 
+// ---------------------------------------------------------------------------
+// Engine artifact (Python runtime + CLIMADA). Hosted on a dedicated release
+// tag, decoupled from app version tags, so app releases can be cleaned up
+// without breaking engine bootstrap.
+//
+// KEEP IN SYNC with installer/installer.nsh (search ENGINE_RELEASE_TAG).
+// When changing the engine, bump the tag here AND in the installer, then
+// update ENGINE_SHA256 to match the new archive.
+// ---------------------------------------------------------------------------
+const ENGINE_RELEASE_TAG = "engine-v1";
+const ENGINE_DOWNLOAD_URL = `https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/${ENGINE_RELEASE_TAG}/RiskWiseEngine.zip`;
+const ENGINE_SHA256_URL = `${ENGINE_DOWNLOAD_URL}.sha256`;
+
 global.pythonProcess = null;
 
 const basePath = app.getAppPath();
@@ -85,8 +98,7 @@ const downloadAndInstallEngine = async (_loaderWindow) => {
 
     // Use electron's net module
     const { net } = require("electron");
-    const engineUrl =
-      "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/v1.0.6/RiskWiseEngine.zip";
+    const engineUrl = ENGINE_DOWNLOAD_URL;
 
     await new Promise((resolve, reject) => {
       const request = net.request(engineUrl);
@@ -154,6 +166,55 @@ const downloadAndInstallEngine = async (_loaderWindow) => {
         `Archive too small (${(archiveSize / 1024 / 1024).toFixed(2)} MB) - download failed`
       );
     }
+
+    updateLoaderMessage("Verifying engine archive...");
+    log.info("[electron] fetching expected SHA-256 from:", ENGINE_SHA256_URL);
+
+    const expectedSha256 = await new Promise((resolve, reject) => {
+      const req = net.request(ENGINE_SHA256_URL);
+      let body = "";
+      req.on("response", (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`SHA-256 sidecar returned HTTP ${res.statusCode}`));
+          return;
+        }
+        res.on("data", (chunk) => {
+          body += chunk.toString("utf8");
+        });
+        res.on("end", () => resolve(body.trim().toLowerCase()));
+        res.on("error", reject);
+      });
+      req.on("error", reject);
+      req.end();
+    });
+
+    if (!/^[a-f0-9]{64}$/.test(expectedSha256)) {
+      throw new Error(`Malformed SHA-256 sidecar contents: ${expectedSha256.slice(0, 80)}`);
+    }
+
+    const crypto = require("crypto");
+    const actualSha256 = await new Promise((resolve, reject) => {
+      const hash = crypto.createHash("sha256");
+      const stream = fs.createReadStream(archivePath);
+      stream.on("data", (chunk) => hash.update(chunk));
+      stream.on("end", () => resolve(hash.digest("hex")));
+      stream.on("error", reject);
+    });
+
+    if (actualSha256 !== expectedSha256) {
+      log.error(
+        `[electron] engine SHA-256 mismatch. expected=${expectedSha256} actual=${actualSha256}`
+      );
+      try {
+        fs.unlinkSync(archivePath);
+      } catch {
+        /* best-effort cleanup */
+      }
+      throw new Error(
+        "Engine archive integrity check failed (SHA-256 mismatch). The download may be corrupted or tampered. Please retry."
+      );
+    }
+    log.info("[electron] engine SHA-256 verified:", actualSha256);
 
     updateLoaderMessage("Extracting engine files...");
     log.info("[electron] Starting extraction...");

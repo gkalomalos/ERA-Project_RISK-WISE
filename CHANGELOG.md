@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.0.9 - 2026-06-03
+
+### Changed
+
+- Decoupled the engine download from app release tags using a dedicated `engine-v1` release
+- Switched the Leaflet basemap from OpenStreetMap to Carto Voyager
+- Updated application and security dependencies
+
+### Fixed
+
+- Corrected `cred_output` macroeconomic data and removed `government_debt`
+- Hardened Python IPC parsing and tightened the Electron preload bridge
+- Improved reliability of the startup and progress loader
+- Fixed several scenario runner and base handler bugs
+
 ## 1.0.8 - 2025-12-17
 
 ### Added

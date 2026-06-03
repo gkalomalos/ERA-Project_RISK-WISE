@@ -5,6 +5,17 @@ const path = require("path");
 const fs = require("fs");
 const log = require("electron-log");
 
+// ---------------------------------------------------------------------------
+// Engine artifact (Python runtime + CLIMADA). Hosted on a dedicated release
+// tag, decoupled from app version tags, so app releases can be cleaned up
+// without breaking engine bootstrap.
+//
+// KEEP IN SYNC with installer/installer.nsh (search ENGINE_RELEASE_TAG).
+// When changing the engine, bump the tag here AND in the installer.
+// ---------------------------------------------------------------------------
+const ENGINE_RELEASE_TAG = "engine-v1";
+const ENGINE_DOWNLOAD_URL = `https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/${ENGINE_RELEASE_TAG}/RiskWiseEngine.zip`;
+
 global.pythonProcess = null;
 
 const basePath = app.getAppPath();
@@ -85,8 +96,7 @@ const downloadAndInstallEngine = async (_loaderWindow) => {
 
     // Use electron's net module
     const { net } = require("electron");
-    const engineUrl =
-      "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/v1.0.6/RiskWiseEngine.zip";
+    const engineUrl = ENGINE_DOWNLOAD_URL;
 
     await new Promise((resolve, reject) => {
       const request = net.request(engineUrl);

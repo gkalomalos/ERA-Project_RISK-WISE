@@ -1,3 +1,11 @@
+; ---------------------------------------------------------------------------
+; Engine artifact (Python + CLIMADA). KEEP IN SYNC with public/electron.js
+; (search ENGINE_RELEASE_TAG). When changing the engine, bump the tag here
+; AND in public/electron.js.
+; ---------------------------------------------------------------------------
+!define ENGINE_RELEASE_TAG "engine-v1"
+!define ENGINE_DOWNLOAD_URL "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/${ENGINE_RELEASE_TAG}/RiskWiseEngine.zip"
+
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 
@@ -58,7 +66,7 @@
     DetailPrint "  Archive size: ~500 MB"
     Sleep 800
     
-    StrCpy $3 "https://github.com/gkalomalos/ERA-Project_RISK-WISE/releases/download/v1.0.6/RiskWiseEngine.zip"
+    StrCpy $3 "${ENGINE_DOWNLOAD_URL}"
     
     nsExec::ExecToLog 'curl -L "$3" --output "$2"'
     Pop $4

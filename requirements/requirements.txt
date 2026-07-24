@@ -1,9 +1,9 @@
 numpy==2.1.2
 pandas==2.2.3
-setuptools==75.1.0
-wheel==0.44.0
+setuptools==83.0.0
+wheel==0.46.2
 matplotlib==3.9.2
-geopandas==1.0.1
+geopandas==1.1.2
 shapely==2.0.6
 XlsxWriter==3.2.0
 pycountry==24.6.1
